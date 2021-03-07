@@ -19,15 +19,14 @@
 # in the templates via {{ site.myvariable }}.
 
 title: 바이칼AI 기술 블로그
-email: ransat@baikal.ai
+# email: ransat@baikal.ai
 description: >- # this means to ignore newlines until "baseurl:"
-  Write an awesome description for your new site here. You can edit this
-  line in _config.yml. It will appear in your document head meta (for
-  Google search results) and in your feed.xml site description.
+  바이칼 기술 블로그는 바이칼AI 기술 및 연구개발 과정에서 얻어진 다양한 내용을
+  공유합니다. 인공지능, 딥러닝, 자연어 처리, SW 공학, 품질 등 다양한 주제를 다룹니다.
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
-twitter_username: jekyllrb
-github_username:  jekyll
+# twitter_username: jekyllrb
+# github_username:  jekyll
 
 # Build settings
 theme: minima
