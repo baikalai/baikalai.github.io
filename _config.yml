@@ -11,14 +11,15 @@ email: master@baikal.ai
 description: > # this means to ignore newlines until "baseurl:"
   바이칼 기술 블로그는 바이칼AI 기술 및 연구개발 과정에서 얻어진 다양한 내용을
   공유합니다. 인공지능, 딥러닝, 자연어 처리, SW 공학, 품질 등 다양한 주제를 다룹니다.
-baseurl: "/blog"
-#baseurl: "/"
-url: "/" # the base hostname & protocol for your site
+# baseurl: "/blog"
+baseurl: "/"
+url: "https://baikalai.github.io" # the base hostname & protocol for your site
 author: baikal.ai
 # twitter_username: jekyllrb
 github_username: baikalai
-# gitlab_username:  pages
-google_analytics: "UA-192217988-1"
+# gitlab_username:  baikal
+google_analytics: G-R11R1K023V
+logo: thumb-01.jpg
 
 # Outputting
 permalink: /:categories/:year/:month/:day/:title
