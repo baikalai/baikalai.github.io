@@ -13,12 +13,13 @@ description: > # this means to ignore newlines until "baseurl:"
   공유합니다. 인공지능, 딥러닝, 자연어 처리, SW 공학, 품질 등 다양한 주제를 다룹니다.
 #baseurl: "/blog"
 baseurl: "/"
-url: "/" # the base hostname & protocol for your site
+url: "https://baikalai.github.io" # the base hostname & protocol for your site
 author: baikal.ai
 # twitter_username: jekyllrb
 github_username: baikalai
-# gitlab_username:  pages
+# gitlab_username:  baikal
 google_analytics: "UA-192217988-1"
+logo: post-icon.jpg
 
 # Outputting
 permalink: /:categories/:year/:month/:day/:title
