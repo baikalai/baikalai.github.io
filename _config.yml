@@ -19,7 +19,7 @@ author: baikal.ai
 github_username: baikalai
 # gitlab_username:  baikal
 google_analytics: "UA-192217988-1"
-logo: post-icon.jpg
+logo: thumb-01.jpg
 
 # Outputting
 permalink: /:categories/:year/:month/:day/:title
