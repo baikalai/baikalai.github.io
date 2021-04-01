@@ -1,4 +1,33 @@
-![ner_tc](../files/2021-03-31-Docker-In-GPU-VS-CPU/images/ner_tc.png)
+---
+layout: post
+title:  "도커를 이용한 GPU vs CPU 속도 테스트"
+subtitle: "GPU를 이용할 수 있는 도커 / 테스트 / 테스트 결과"
+date:  2021-04-01 13:00:00 +0900
+background: '/img/post-001.jpg'
+categories:
+   - NLP 
+tags:
+   - "deeq NLP"
+   - 디큐 NLP
+   - docker
+   - gpu
+   - cpu
+   - python
+   - grpc
+   - baikalai
+   - 바이칼AI
+   - 자연어처리
+   - 인공지능
+   - natural language processing
+   - 바이칼에이아이
+
+
+author: 김진수 <jskim@baikal.ai>
+---
+
+{:.center}
+![ner_tc](/img/posts/Docker-In-GPU-VS-CPU/ner_tc.png)
+*Docker-In-GPU-VS-CPU*
 
 <b>Baikal Ai 개발팀에서는 NER(Named Entity Recognition), TC(Text Classification)의 모델링, 예측을 수행할 수 있도록 독립적인 서버를 구축했습니다.
 그 서버는 메인서버의 뒷단에 위치할 계획이기 때문에 BIB(Back In Backend)라고 부릅니다.
@@ -33,29 +62,31 @@ GPU를 이용했을 때 빠르다면 얼마나 빠를 것인지 확인하는 차
 실제로 서비스를 준비하는 과정에서는 필수 데이터만으로 구성된 이미지를 만들 계획입니다.<br><br>
 
 우선 도커 이미지를 확인합니다. 도커 이미지는 다음 명령어로 확인할 수 있습니다.
-```
+```shell
 docker images
 ```
 도커 이미지를 확인하고 위 두개의 도커 이미지가 없는 경우 `docker pull` 을 이용해서 직접 다운로드 받으셔도 되고 `docker run` 명령어를 이용할 때
 로컬 환경에 해당 이미지가 존재하지 않으면 자동으로 다운받기 때문에 곧바로 컨테이너를 띄우셔도 됩니다.
 베이스 이미지로 사용될 두개의 도커 이미지를 준비하셨다면 이제 저희가 원하는대로 이미지를 빌드할 차례입니다.
 `Dockerfile`을 생성하실 때 다음과 같이 시작하시면 베이스 이미지로 시작할 수 있습니다.
-```
+```dockerfile
 # gpu를 사용할 도커 이미지를 빌드하는 경우
 FROM tensorflow/tensorflow:2.3.0-gpu
-// 나머지 원하는 작업...
+# 나머지 원하는 작업...
 
 # gpu를 사용하지 않을 도커 이미지를 빌드하는 경우
 FROM python3.6
-// 나머지 원하는 작업...
+# 나머지 원하는 작업...
 ```
 만들어 둔 `Dockerfile`을 이용해서 도커 이미지를 빌드하였습니다.
 도커 이미지를 확인해보면 아래와 같이 두개의 도커 이미지가 준비되었음을 확인할 수 있습니다.
 
-![docker_images](../files/2021-03-31-Docker-In-GPU-VS-CPU/images/docker_images.png)
+{:.center}
+![docker_images](/img/posts/Docker-In-GPU-VS-CPU/docker_images.png)
+*베이스 이미지로부터 직접 빌드한 도커 이미지*
 
 다음과 같은 명령어를 이용해서 4개의 각기 다른 컨테이너를 띄워줍니다.
-```
+```shell
 docker run -d -p 20001:50051 --name bib_train_gpu bib_gpu
 docker run -d -p 20002:50051 --name bib_predict_gpu bib_gpu
 docker run -d -p 20003:50051 --name bib_train_gpu bib_cpu
@@ -63,7 +94,10 @@ docker run -d -p 20004:50051 --name bib_predict_gpu bib_cpu
 ```
 도커 컨테이너들이 아래와 같이 생성되었습니다.
 
-![docker_containers](../files/2021-03-31-Docker-In-GPU-VS-CPU/images/docker_containers.png)
+{:.center}
+![docker_containers](/img/posts/Docker-In-GPU-VS-CPU/docker_containers.png)
+*직접 빌드한 도커 이미지로 띄운 컨테이너*
+
 저희는 지금까지의 과정을 통해서 두가지 효과를 기대하고 있습니다.
 
 1. BIB 서버 환경구축의 편리성
@@ -86,10 +120,10 @@ BIB 서버를 <u>도커가 설치된 어디서든 이미지만 있다면 금방 
 따라서 이 테스트에서 학습된 모델의 정확도는 결과 지표로써 의미가 없다고 볼 수 있습니다.
 <br>
 
-1. [ner_train.txt](../files/2021-03-31-Docker-In-GPU-VS-CPU/inputs/ner_train.txt)
-2. [ner_predict.txt](../files/2021-03-31-Docker-In-GPU-VS-CPU/inputs/ner_predict.txt)
-3. [tc_train.txt](../files/2021-03-31-Docker-In-GPU-VS-CPU/inputs/tc_train.txt)
-4. [tc_predict.txt](../files/2021-03-31-Docker-In-GPU-VS-CPU/inputs/tc_predict.txt)
+1. [ner_train.txt](/assets/downloads/Docker-In-GPU-VS-CPU/ner_train.txt)
+2. [ner_predict.txt](/assets/downloads/Docker-In-GPU-VS-CPU/ner_predict.txt)
+3. [tc_train.txt](/assets/downloads/Docker-In-GPU-VS-CPU/inputs/tc_train.txt)
+4. [tc_predict.txt](/assets/downloads/Docker-In-GPU-VS-CPU/tc_predict.txt)
    </b>
 
 # SECTION 3 - 테스트 실행
@@ -97,7 +131,7 @@ BIB 서버를 <u>도커가 설치된 어디서든 이미지만 있다면 금방 
 따라서 리퀘스트를 보내기 위해서는 서버가 서비스하는 proto와 동일한 proto로 GRPC 클라이언트를 준비해야 합니다.
 다음 예시는 bib_train_gpu 컨테이너에 TC 학습요청을 보내는 클라이언트 예시입니다.
 [python 을 이용한 grpc 서버/클라이언트](https://grpc.io/docs/languages/python/quickstart/) </b>
-```
+```python
 # client.py
 import train_pb2_grpc as pb
 import train_pb2 as pb2
@@ -125,18 +159,18 @@ stub.TrainTextClassificationModel(request)
 
 위 두 가지 예측 결과를 구분하여 확인합니다.
 
-1. [GPU : NER 모델링](../files/2021-03-31-Docker-In-GPU-VS-CPU/outputs/ner_train_gpu.txt)
-2. [GPU : NER 예측(로딩부터)](../files/2021-03-31-Docker-In-GPU-VS-CPU/outputs/ner_predict_gpu_from_load.txt)
-3. [GPU : NER 예측(예측만)](../files/2021-03-31-Docker-In-GPU-VS-CPU/outputs/ner_predict_gpu_after_load.txt)
-4. [GPU : TC 모델링](../files/2021-03-31-Docker-In-GPU-VS-CPU/outputs/tc_train_gpu.txt)
-5. [GPU : TC 예측(로딩부터)](../files/2021-03-31-Docker-In-GPU-VS-CPU/outputs/tc_predict_gpu_from_load.txt)
-6. [GPU : TC 예측(예측만)](../files/2021-03-31-Docker-In-GPU-VS-CPU/outputs/tc_predict_gpu_after_load.txt)
-7. [CPU : NER 모델링](../files/2021-03-31-Docker-In-GPU-VS-CPU/outputs/ner_train_cpu.txt)
-8. [CPU : NER 예측(로딩부터)](../files/2021-03-31-Docker-In-GPU-VS-CPU/outputs/ner_predict_cpu_from_load.txt)
-9. [CPU : NER 예측(예측만)](../files/2021-03-31-Docker-In-GPU-VS-CPU/outputs/ner_predict_cpu_after_load.txt)
-10. [CPU : TC 모델링](../files/2021-03-31-Docker-In-GPU-VS-CPU/outputs/tc_train_cpu.txt)
-11. [CPU : TC 예측(로딩부터)](../files/2021-03-31-Docker-In-GPU-VS-CPU/outputs/tc_predict_cpu_from_load.txt)
-12. [CPU : TC 예측(예측만)](../files/2021-03-31-Docker-In-GPU-VS-CPU/outputs/tc_predict_cpu_after_load.txt)
+1. [GPU : NER 모델링](/assets/downloads/Docker-In-GPU-VS-CPU/ner_train_gpu.txt)
+2. [GPU : NER 예측(로딩부터)](/assets/downloads/Docker-In-GPU-VS-CPU/ner_predict_gpu_from_load.txt)
+3. [GPU : NER 예측(예측만)](/assets/downloads/Docker-In-GPU-VS-CPU/ner_predict_gpu_after_load.txt)
+4. [GPU : TC 모델링](/assets/downloads/Docker-In-GPU-VS-CPU/tc_train_gpu.txt)
+5. [GPU : TC 예측(로딩부터)](/assets/downloads/Docker-In-GPU-VS-CPU/tc_predict_gpu_from_load.txt)
+6. [GPU : TC 예측(예측만)](/assets/downloads/Docker-In-GPU-VS-CPU/tc_predict_gpu_after_load.txt)
+7. [CPU : NER 모델링](/assets/downloads/Docker-In-GPU-VS-CPU/ner_train_cpu.txt)
+8. [CPU : NER 예측(로딩부터)](/assets/downloads/Docker-In-GPU-VS-CPU/ner_predict_cpu_from_load.txt)
+9. [CPU : NER 예측(예측만)](/assets/downloads/Docker-In-GPU-VS-CPU/ner_predict_cpu_after_load.txt)
+10. [CPU : TC 모델링](/assets/downloads/Docker-In-GPU-VS-CPU/tc_train_cpu.txt)
+11. [CPU : TC 예측(로딩부터)](/assets/downloads/Docker-In-GPU-VS-CPU/tc_predict_cpu_from_load.txt)
+12. [CPU : TC 예측(예측만)](/assets/downloads/Docker-In-GPU-VS-CPU/tc_predict_cpu_after_load.txt)
 
 </b>
 
