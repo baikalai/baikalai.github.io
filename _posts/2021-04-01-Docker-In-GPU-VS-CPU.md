@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "도커를 이용한<br>GPU vs CPU 속도 테스트"
+title:  "도커를 이용한 <br>GPU vs CPU 테스트"
 subtitle: "GPU를 이용할 수 있는 도커 / 테스트 / 테스트 결과"
 date:  2021-04-01 13:00:00 +0900
 background: '/img/post-001.jpg'
