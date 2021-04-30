@@ -27,9 +27,9 @@ author: 김진수 <jskim@baikal.ai>
 
 # 개요
 
-Baikal Ai 개발팀에서는 `NER(Named Entity Recognition)`, `TC(Text Classification)`의 모델링, 예측을 수행할 수 있도록 독립적인 서버를 구축했습니다.
+Baikal Ai 개발팀에서는 `NER(Named Entity Recognition)`, `TC(Text Classification)`의 학습, 예측을 수행할 수 있도록 독립적인 서버를 구축했습니다.
 그 서버는 메인서버의 뒷단에 위치할 계획이기 때문에 `BIB(Back In Backend)`라고 부릅니다.
-BIB 에서는 모델링, 예측을 수행할 서버들이 작동될 것이기 때문에 BIB 서버를 도커라이징하여 개별 컨테이너로 관리했을 때 효율적인 관리가 가능할 것이라 예상하였습니다.
+BIB 에서는 학습, 예측을 수행할 서버들이 작동될 것이기 때문에 BIB 서버를 도커라이징하여 개별 컨테이너로 관리했을 때 효율적인 관리가 가능할 것이라 예상하였습니다.
 이번 포스팅에서는 BIB를 도커라이징하여 컨테이너를 생성한 다음 `GPU를 이용했을 때의 작업속도`와 `CPU를 이용했을 때의 작업속도`를 비교해보도록 하겠습니다.
 이 과정에서 우리가 살펴보아야 할 점은 크게 두가지입니다.
 첫 번째, GPU를 이용할 수 있는 도커 이미지를 만드는 간단한 방법 및 의의, 두 번째, GPU와 CPU를 이용했을 때 퍼포먼스의 차이가 될 것 같습니다.
@@ -52,15 +52,10 @@ BIB 서버는 사용자의 요청에 따라 그 수가 유동적으로 변할 �
 1. [`tensorflow/tensorflow:2.3.0-gpu`](https://www.tensorflow.org/install/docker?hl=ko){: target="_blank"}
 2. [`python:3.6`](https://hub.docker.com/_/python){: target="_blank"}
 
-
 도커 베이스 이미지는 위 두개를 각각 사용하였습니다.
 텐서플로에서 제공하는 GPU 도커 이미지를 이용하면 별도의 설정 없이도 도커에서 GPU를 이용할 수 있습니다.
 연결된 링크를 통해서 공식 가이드와 버전을 확인하실 수 있습니다.
-물론 이미지를 빌드하고나면 도커 이미지의 사이즈가 상당히 큰 것을 볼 수 있는데 이러한 문제는 저희에게는 필요없는 텐서플로 패키지까지 포함되어 있기 때문입니다.
-간단한 기능 테스트와 퍼포먼스 체크를 위해서 선택한 방법이니 도커를 통해 GPU를 이용하는 다른 방법을 사용하여 경량화 하셔도 무방합니다.
-실제로 서비스를 준비하는 과정에서는 필수 데이터만으로 구성된 이미지를 만들 계획입니다.<br>
-
-우선 도커 이미지를 확인합니다. 도커 이미지는 다음 명령어로 확인할 수 있습니다.
+우선 현재 존재하는 도커 이미지를 확인합니다. 도커 이미지는 다음 명령어로 확인할 수 있습니다.
 
 ```shell
 docker images
@@ -84,9 +79,23 @@ FROM python3.6
 만들어 둔 `Dockerfile`을 이용해서 도커 이미지를 빌드하였습니다.
 도커 이미지를 확인해보면 아래와 같이 두개의 도커 이미지가 준비되었음을 확인할 수 있습니다.
 
-
 ![docker_images]({{"/assets/images/posts/Docker-In-GPU-VS-CPU/docker_images.png"| relative_url}}){: width="100%"}{: .center}
 
+물론 이미지를 빌드하고나면 도커 이미지의 사이즈가 상당히 큽니다. 각각 `bib_gpu : 5.96GB`, `bib_cpu : 3.9GB` 입니다. 
+어떻게 보면 다소 부담스러운 사이즈라고 느낄 수도 있지만 그 이유는 다음과 같을 것입니다.
+
+1. 베이스 이미지에서 사이즈 차이가 난다.
+   > `docker images` 명령어를 통해 `docker pull` 받은 이미지들의 사이즈를 비교해보면 `python3.6`은 대략 800MB 이고 `tensorflow/tensorflow:2.3.0-gpu`은 3GB가 넘는 것을 알 수 있습니다.
+   > 베이스 이미지 자체가 2GB 넘게 차이가 나는 상황입니다. 물론 `python3.6` 이미지는 베이스 이미지일 뿐 우리는 여기에 텐서플로 및 다른 패키지들을 설치해서 사용해야 하기 때문에 사이즈 차이는 더 줄어들 수도 커질 수도 있는 단계입니다.
+2. bib 서버의 크기가 3GB 가량 된다.
+   > `python3.6`이미지를 사용하여 빌드한 `bib_cpu` 이미지에도 tensorflow 2.3.0 버전을 설치하기 위해 미리 준비해둔 `requirements.txt` 파일의 패키지를 설치합니다. 
+   > 위에 언급한대로 `bib_gpu : 5.96GB`, `bib_cpu : 3.9GB` 가 생성됩니다. 미세하게나마 사이즈 격차가 줄어들었습니다.
+   > GPU를 사용하는 도커 이미지를 빌드할 때 빠른 테스트를 위해서 텐서플로에서 제공한 이미지를 사용했지만 환경설정을 직접 수행하여 빌드한다면 4GB 밑으로 경량화할 수 있을 것으로 생각됩니다.
+   > 실제로 서비스를 준비하는 과정에서는 필수 데이터만으로 구성된 이미지를 만들 계획입니다.
+   > 
+<br>
+
+자, 이제 컨테이너를 띄워서 테스트를 진행할 차례입니다.
 다음과 같은 명령어를 이용해서 4개의 각기 다른 컨테이너를 띄워줍니다.
 ```shell
 docker run -d -p 20001:50051 --name bib_train_gpu bib_gpu
@@ -97,6 +106,19 @@ docker run -d -p 20004:50051 --name bib_predict_gpu bib_cpu
 도커 컨테이너들이 아래와 같이 생성되었습니다.
 
 ![docker_containers]({{"assets/images/posts/Docker-In-GPU-VS-CPU/docker_containers.png"| relative_url}}){: width="100%"}{: .center}
+
+이 다음에 우리가 사용하려는 GPU를 도커 컨테이너도 이용할 수 있도록 몇가지 설정을 확인해줍니다.
+
+1. GPU 장치 확인
+  > `lshw -C display` 명령어를 이용해서 GPU 장치를 확인합니다.
+  > GPU가 정상적으로 인식되었다는 가정하에 진행합니다.
+2. NVIDIA 드라이버 설치
+  > 드라이버가 설치되어 있지 않다면 드라이버를 설치해주어야 합니다.
+  > 특정 버전을 원하지 않는 경우 자동 설치 명령어 `ubuntu-drivers autoinstall` 를 이용하고 재부팅합니다. 
+  > 드라이버가 설치되어 있다는 가정하에 진행합니다.
+3. nvidia-docker 설치
+  > 설치되어 있지 않은 경우 버전에 따라 달라질 수 있으므로 [공식 페이지](https://github.com/NVIDIA/nvidia-docker#quickstart) 를 참고해서 설치해줍니다.
+  > 설치가 완료되었다면 `nvidia-smi` 명령어를 통해 GPU 정보가 뜨는지 확인합니다. 
 
 저희는 지금까지의 과정을 통해서 두가지 효과를 기대하고 있습니다.
 
@@ -115,7 +137,7 @@ BIB 서버를 <u>도커가 설치된 어디서든 이미지만 있다면 금방 
 모두의 말뭉치의 데이터를 가공하여 BIB에서 인식할 수 있도록 가공하여 NER 데이터셋으로 이용하였고
 자체적으로 수집한 데이터를 이용하여 TC 데이터셋으로 이용하였습니다.
 이번 테스트는 속도와 관련된만큼 사용된 데이터는 데이터의 크기를 중점적으로 고려하여 진행하였습니다.
-하지만 모델을 학습하는 경우에는 데이터의 질에 따라 정확도 등이 크게 영향을 받게 됩니다.
+하지만 학습하는 경우에는 데이터의 질에 따라 정확도 등이 크게 영향을 받게 됩니다.
 따라서 이 테스트에서 학습된 모델의 정확도는 결과 지표로써 의미가 없다고 볼 수 있습니다.
 <br>
 
@@ -155,30 +177,25 @@ stub.TrainTextClassificationModel(request)
 1. 모델을 로드하지 않고 예측을 요청하여 모델로딩부터 예측까지
 2. 모델을 미리 로딩해둔 이후 예측만
 
-위 두 가지 예측 결과를 구분하여 확인합니다.
+위 두 가지 예측 결과를 구분하여 확인해보면 좋겠지만 실제 서비스에서는 모델을 로딩해둔 이후에 예측하는 서비스가 주가 될 것입니다.
+따라서 모델을 로딩하는 시간은 제외하고 예측만 하는 경우의 시간을 고려합니다. (환경에 따라 다르겠지만 여기서는 로딩하는 시간만 대략 8초 정도 소요되었습니다.)
 
-1. [GPU : NER 모델링]({{"/assets/downloads/Docker-In-GPU-VS-CPU/ner_train_gpu.txt"| relative_url}}){: download="ner_train_gpu.txt"}
-2. [GPU : NER 예측(로딩부터)]({{"/assets/downloads/Docker-In-GPU-VS-CPU/ner_predict_gpu_from_load.txt"| relative_url}}){: download="ner_predict_gpu_from_load.txt"}
-3. [GPU : NER 예측(예측만)]({{"/assets/downloads/Docker-In-GPU-VS-CPU/ner_predict_gpu_after_load.txt"| relative_url}}){: download="ner_predict_gpu_after_load.txt"}
-4. [GPU : TC 모델링]({{"/assets/downloads/Docker-In-GPU-VS-CPU/tc_train_gpu.txt"| relative_url}}){: download="tc_train_gpu.txt"}
-5. [GPU : TC 예측(로딩부터)]({{"/assets/downloads/Docker-In-GPU-VS-CPU/tc_predict_gpu_from_load.txt"| relative_url}}){: download="tc_predict_gpu_from_load.txt"}
-6. [GPU : TC 예측(예측만)]({{"/assets/downloads/Docker-In-GPU-VS-CPU/tc_predict_gpu_after_load.txt"| relative_url}}){: download="tc_predict_gpu_after_load.txt"}
-7. [CPU : NER 모델링]({{"/assets/downloads/Docker-In-GPU-VS-CPU/ner_train_cpu.txt"| relative_url}}){: download="ner_train_cpu.txt"}
-8. [CPU : NER 예측(로딩부터)]({{"/assets/downloads/Docker-In-GPU-VS-CPU/ner_predict_cpu_from_load.txt"| relative_url}}){: download="ner_predict_cpu_from_load.txt"}
-9. [CPU : NER 예측(예측만)]({{"/assets/downloads/Docker-In-GPU-VS-CPU/ner_predict_cpu_after_load.txt"| relative_url}}){: download="ner_predict_cpu_after_load.txt"}
-10. [CPU : TC 모델링]({{"/assets/downloads/Docker-In-GPU-VS-CPU/tc_train_cpu.txt"| relative_url}}){: download="tc_train_cpu.txt"}
-11. [CPU : TC 예측(로딩부터)]({{"/assets/downloads/Docker-In-GPU-VS-CPU/tc_predict_cpu_from_load.txt"| relative_url}}){: download="tc_predict_cpu_from_load.txt"}
-12. [CPU : TC 예측(예측만)]({{"/assets/downloads/Docker-In-GPU-VS-CPU/tc_predict_cpu_after_load.txt"| relative_url}}){: download="tc_predict_cpu_after_load.txt"}
+1. [GPU : NER 학습]({{"/assets/downloads/Docker-In-GPU-VS-CPU/ner_train_gpu.txt"| relative_url}}){: download="ner_train_gpu.txt"}
+2. [GPU : NER 예측]({{"/assets/downloads/Docker-In-GPU-VS-CPU/ner_predict_gpu_after_load.txt"| relative_url}}){: download="ner_predict_gpu_after_load.txt"}
+3. [GPU : TC 학습]({{"/assets/downloads/Docker-In-GPU-VS-CPU/tc_train_gpu.txt"| relative_url}}){: download="tc_train_gpu.txt"}
+4. [GPU : TC 예측]({{"/assets/downloads/Docker-In-GPU-VS-CPU/tc_predict_gpu_after_load.txt"| relative_url}}){: download="tc_predict_gpu_after_load.txt"}
+5. [CPU : NER 학습]({{"/assets/downloads/Docker-In-GPU-VS-CPU/ner_train_cpu.txt"| relative_url}}){: download="ner_train_cpu.txt"}
+6. [CPU : NER 예측]({{"/assets/downloads/Docker-In-GPU-VS-CPU/ner_predict_cpu_after_load.txt"| relative_url}}){: download="ner_predict_cpu_after_load.txt"}
+7. [CPU : TC 학습]({{"/assets/downloads/Docker-In-GPU-VS-CPU/tc_train_cpu.txt"| relative_url}}){: download="tc_train_cpu.txt"}
+8. [CPU : TC 예측]({{"/assets/downloads/Docker-In-GPU-VS-CPU/tc_predict_cpu_after_load.txt"| relative_url}}){: download="tc_predict_cpu_after_load.txt"}
 
 
 # SECTION 4 - 테스트 결과
 
-
 파일로 확인할 수 있는 테스트 결과는 작업의 스텝별로 진행율을 나타내고 있기 때문에 테스트 목적에 맞게 시간 경과만 도식화해서 살펴봅시다.
 테스트 결과는 GPU, CPU의 사양에 따라 다를 수 있습니다.
 
-
-#### 1. 모델링
+#### 1. 학습
 
 | |GPU|CPU|CPU / GPU|
 |---|---|---|---|
@@ -192,13 +209,11 @@ stub.TrainTextClassificationModel(request)
 
 | |GPU|CPU|CPU / GPU|
 |---|---|---|---|
-|NER 작업시간(로딩부터)|66.9초|105.6초|1.58|
-|NER 작업시간(예측만)|58.2초|99.5초|1.71|
-|TC 작업시간(로딩부터)|15.4초|79.0초|5.13|
-|TC 작업시간(예측만)|7.5초|72.2초|9.62|
+|NER 작업시간|58.2초|99.5초|1.71|
+|TC 작업시간|7.5초|72.2초|9.62|
 
-- NER : GPU에서 작업하는 경우 CPU에 비해서 속도가 `1.58 ~ 1.71`배 가량 빠름.
-- TC : GPU에서 작업하는 경우 CPU에 비해서 속도가 `5.13 ~ 9.62`배 가량 빠름.
+- NER : GPU에서 작업하는 경우 CPU에 비해서 속도가 `1.71`배 가량 빠름.
+- TC : GPU에서 작업하는 경우 CPU에 비해서 속도가 `9.62`배 가량 빠름.
 
 # SECTION 5 - 결론
 
