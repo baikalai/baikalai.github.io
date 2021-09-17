@@ -2,5 +2,5 @@ _site
 .sass-cache
 .jekyll-metadata
 public/
-_config.yml
+#_config.yml
 *.lock
